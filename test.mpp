@@ -1,0 +1,18 @@
+!Meow++
+import "math"
+target = math.random.int(1, 100)
+stdout << "Guess a number between 1 and 100!\n"
+guess = ""
+while (true) {
+    stdout << "> "
+    stdin >> guess
+    guess_num = number(guess)
+    if (guess_num < target) {
+        stdout << "  Too low!\n"
+    } else if (guess_num > target) {
+        stdout << "  Too high!\n"
+    } else {
+        stdout << "  Correct!\n"
+        break
+    }
+}
