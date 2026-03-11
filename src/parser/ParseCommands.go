@@ -573,11 +573,7 @@ func ImportStatement(line Line) (map[string]any, error) {
 		return nil, err
 	}
 	moduleContent := string(moduleContentBytes)
-	moduleLines, err := SplitStatements(moduleContent, ";", 1, absPath, true)
-	if err != nil {
-		return nil, err
-	}
-	moduleCmds, err := ParseAll(moduleLines)
+	moduleCmds, err := Parse(moduleContent, absPath)
 	if err != nil {
 		return nil, err
 	}
@@ -729,6 +725,42 @@ func ParseCommand(line Line) ([]map[string]any, error) {
 	} else if EntryPointRegex.IsMatch(text) {
 		cmd := map[string]any{
 			"cmd": "entry_point",
+		}
+		cmd["exc"] = exc
+		return []map[string]any{cmd}, nil
+	} else if GlobalRegex.IsMatch(text) {
+		match := GlobalRegex.Match(text)
+		varNamesStr := match.Group(1)
+		varNames := []string{}
+		for _, varName := range strings.Split(varNamesStr, ",") {
+			varName = strings.TrimSpace(varName)
+			if varName != "" {
+				varNames = append(varNames, varName)
+			} else {
+				return nil, RaiseError(line, "SyntaxError: invalid variable name in global statement")
+			}
+		}
+		cmd := map[string]any{
+			"cmd": "global",
+			"vars": varNames,
+		}
+		cmd["exc"] = exc
+		return []map[string]any{cmd}, nil
+	} else if NonlocalRegex.IsMatch(text) {
+		match := NonlocalRegex.Match(text)
+		varNamesStr := match.Group(1)
+		varNames := []string{}
+		for _, varName := range strings.Split(varNamesStr, ",") {
+			varName = strings.TrimSpace(varName)
+			if varName != "" {
+				varNames = append(varNames, varName)
+			} else {
+				return nil, RaiseError(line, "SyntaxError: invalid variable name in nonlocal statement")
+			}
+		}
+		cmd := map[string]any{
+			"cmd": "nonlocal",
+			"vars": varNames,
 		}
 		cmd["exc"] = exc
 		return []map[string]any{cmd}, nil

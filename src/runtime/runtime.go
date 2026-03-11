@@ -145,8 +145,13 @@ func (rt *Runtime) RunCmd() error {
 			}
 		}
 		moduleObj, err := NewSubRuntime(
-			content,
+			NewRuntime(
+				map[string]Obj{},
+				content,
+			),
 		)
+		moduleObj.Value.(*Runtime).GotoEntryPoint()
+		moduleObj.Value.(*Runtime).Run()
 		if err != nil {
 			return err
 		}
@@ -164,6 +169,32 @@ func (rt *Runtime) RunCmd() error {
 		rt.SetVar(moduleName, moduleObj)
 		return nil
 	case "entry_point":
+		return nil
+	case "global":
+		varNames, ok := cmd["vars"].([]any)
+		if !ok {
+			return fmt.Errorf("RuntimeError: invalid variable names in global statement")
+		}
+		for _, varName := range varNames {
+			varNameStr, ok := varName.(string)
+			if !ok {
+				return fmt.Errorf("RuntimeError: invalid variable name in global statement")
+			}
+			rt.SetVar(varNameStr, nil)
+		}
+		return nil
+	case "nonlocal":
+		varNames, ok := cmd["vars"].([]any)
+		if !ok {
+			return fmt.Errorf("RuntimeError: invalid variable names in nonlocal statement")
+		}
+		for _, varName := range varNames {
+			varNameStr, ok := varName.(string)
+			if !ok {
+				return fmt.Errorf("RuntimeError: invalid variable name in nonlocal statement")
+			}
+			rt.SetVar(varNameStr, nil)
+		}
 		return nil
 	case "expr":
 		_, err := rt.GetValue(cmd["value"])

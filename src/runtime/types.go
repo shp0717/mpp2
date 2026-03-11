@@ -302,6 +302,9 @@ var ( // Define magic methods for each type
 			}
 			return nil, fmt.Errorf("TypeError: unsupported argument type for get_item: %s", args[0].Type)
 		},
+		"length": func(self Obj, args []Obj) (Obj, error) {
+			return NewNumber(float64(len(self.Value.(string))))
+		},
 	}
 	BoolMagic = map[string]ObjMagic{
 		"op<": func(self Obj, args []Obj) (Obj, error) {
@@ -508,6 +511,9 @@ var ( // Define magic methods for each type
 			}
 			return NewBool(!eqResult.Value.(bool))
 		},
+		"length": func(self Obj, args []Obj) (Obj, error) {
+			return NewNumber(float64(len(self.Value.([]Obj))))
+		},
 	}
 	MapMagic = map[string]ObjMagic{
 		"get_item": func(self Obj, args []Obj) (Obj, error) {
@@ -517,11 +523,23 @@ var ( // Define magic methods for each type
 			keys := self.Value.(map[string]Obj)["keys"].Value.([]Obj)
 			values := self.Value.(map[string]Obj)["values"].Value.([]Obj)
 			for i, keyObj := range keys {
-				if keyObj == args[0] {
+				eq, err := Equal(keyObj, args[0])
+				if err != nil {
+					return nil, err
+				}
+				if eq.Value.(bool) {
 					return values[i], nil
 				}
 			}
-			return nil, fmt.Errorf("KeyError: key not found in map")
+			repred, err := Repr(self)
+			if err != nil {
+				return nil, fmt.Errorf("RuntimeError: failed to get repr of map: %v", err)
+			}
+			repredKey, err := Repr(args[0])
+			if err != nil {
+				return nil, fmt.Errorf("RuntimeError: failed to get repr of map key: %v", err)
+			}
+			return nil, fmt.Errorf("KeyError: key %s not found in map %s", repredKey.Value.(string), repred.Value.(string))
 		},
 		"set_item": func(self Obj, args []Obj) (Obj, error) {
 			if len(args) != 2 {
@@ -530,12 +548,24 @@ var ( // Define magic methods for each type
 			keys := self.Value.(map[string]Obj)["keys"].Value.([]Obj)
 			values := self.Value.(map[string]Obj)["values"].Value.([]Obj)
 			for i, keyObj := range keys {
-				if keyObj == args[0] {
+				if eq, err := Equal(keyObj, args[0]); err == nil && eq.Value.(bool) {
 					values[i] = args[1]
 					return nil, nil
 				}
 			}
-			return nil, fmt.Errorf("KeyError: key not found in map")
+			keys = append(keys, args[0])
+			values = append(values, args[1])
+			keysObj, err := NewArray(keys)
+			if err != nil {
+				return nil, err
+			}
+			valuesObj, err := NewArray(values)
+			if err != nil {
+				return nil, err
+			}
+			self.Value.(map[string]Obj)["keys"] = keysObj
+			self.Value.(map[string]Obj)["values"] = valuesObj
+			return nil, nil
 		},
 		"array": func(self Obj, args []Obj) (Obj, error) {
 			keys := self.Value.(map[string]Obj)["keys"].Value.([]Obj)
@@ -1003,7 +1033,8 @@ func ToNumber(obj Obj) (Obj, error) {
 
 func ToString(obj Obj) (Obj, error) { // Must support string conversion for all types, using magic method if available
 	if obj.Type == "string" {
-		return obj, nil
+		copy := *obj
+		return &copy, nil
 	} else if magic, ok := obj.Magic["string"]; ok {
 		res, err := magic(obj, nil)
 		if err == nil {
@@ -1015,7 +1046,8 @@ func ToString(obj Obj) (Obj, error) { // Must support string conversion for all 
 
 func ToBool(obj Obj) (Obj, error) {
 	if obj.Type == "bool" {
-		return obj, nil
+		copy := *obj
+		return &copy, nil
 	} else if magic, ok := obj.Magic["bool"]; ok {
 		res, err := magic(obj, nil)
 		if err == nil {
@@ -1027,7 +1059,8 @@ func ToBool(obj Obj) (Obj, error) {
 
 func ToArray(obj Obj) (Obj, error) {
 	if obj.Type == "array" {
-		return obj, nil
+		copy := *obj
+		return &copy, nil
 	} else if magic, ok := obj.Magic["array"]; ok {
 		res, err := magic(obj, nil)
 		if err == nil {
@@ -1039,7 +1072,8 @@ func ToArray(obj Obj) (Obj, error) {
 
 func ToMap(obj Obj) (Obj, error) {
 	if obj.Type == "map" {
-		return obj, nil
+		copy := *obj
+		return &copy, nil
 	} else if magic, ok := obj.Magic["map"]; ok {
 		res, err := magic(obj, nil)
 		if err == nil {
@@ -1070,12 +1104,31 @@ func Length(obj Obj) (Obj, error) {
 }
 
 func CopyTo(dest Obj, src Obj) {
-	srcType := src.Type
-	srcValue := src.Value
-	srcMagic := src.Magic
-	dest.Type = srcType
-	dest.Value = srcValue
-	dest.Magic = srcMagic
+	// dest.Type = src.Type
+	// dest.Value = src.Value
+	// dest.Magic = src.Magic
+	*dest = *src
+}
+
+func SafeCopyTo(dest Obj, src Obj) error {
+	if dest.Type == src.Type {
+		*dest = *src
+		return nil
+	}
+	return fmt.Errorf("TypeError: cannot copy from type %s to type %s", src.Type, dest.Type)
+}
+
+func Copy(obj Obj) Obj {
+	newObj := *obj
+	return &newObj
+}
+
+func DeepCopy(obj Obj) Obj {
+	return &MeowppObject{
+		Type:  obj.Type,
+		Value: obj.Value,
+		Magic: obj.Magic,
+	}
 }
 
 func Equal(a Obj, b Obj) (Obj, error) {

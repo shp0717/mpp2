@@ -896,6 +896,128 @@ func InitBuiltinModules() {  // Type: subruntime
 	if err != nil {
 		panic(err)
 	}
+	mathFloorFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for math.floor, got %d", len(args))
+		}
+		numArg, err := ToNumber(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.floor: %v", err)
+		}
+		floorVal := math.Floor(numArg.Value.(float64))
+		return NewNumber(floorVal)
+	})
+	if err != nil {
+		panic(err)
+	}
+	mathCeilFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for math.ceil, got %d", len(args))
+		}
+		numArg, err := ToNumber(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.ceil: %v", err)
+		}
+		ceilVal := math.Ceil(numArg.Value.(float64))
+		return NewNumber(ceilVal)
+	})
+	if err != nil {
+		panic(err)
+	}
+	mathRoundFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for math.round, got %d", len(args))
+		}
+		numArg, err := ToNumber(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.round: %v", err)
+		}
+		roundVal := math.Round(numArg.Value.(float64))
+		return NewNumber(roundVal)
+	})
+	if err != nil {
+		panic(err)
+	}
+	mathTruncFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for math.trunc, got %d", len(args))
+		}
+		numArg, err := ToNumber(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.trunc: %v", err)
+		}
+		truncVal := math.Trunc(numArg.Value.(float64))
+		return NewNumber(truncVal)
+	})
+	if err != nil {
+		panic(err)
+	}
+	mathAbsFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for math.abs, got %d", len(args))
+		}
+		numArg, err := ToNumber(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.abs: %v", err)
+		}
+		absVal := math.Abs(numArg.Value.(float64))
+		return NewNumber(absVal)
+	})
+	if err != nil {
+		panic(err)
+	}
+	mathMinFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) < 1 {
+			return nil, fmt.Errorf("RuntimeError: expected at least 1 argument for math.min, got %d", len(args))
+		}
+		minVal := math.Inf(1)
+		for _, arg := range args {
+			numArg, err := ToNumber(arg)
+			if err != nil {
+				return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.min: %v", err)
+			}
+			if numArg.Value.(float64) < minVal {
+				minVal = numArg.Value.(float64)
+			}
+		}
+		return NewNumber(minVal)
+	})
+	if err != nil {
+		panic(err)
+	}
+	mathMaxFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) < 1 {
+			return nil, fmt.Errorf("RuntimeError: expected at least 1 argument for math.max, got %d", len(args))
+		}
+		maxVal := math.Inf(-1)
+		for _, arg := range args {
+			numArg, err := ToNumber(arg)
+			if err != nil {
+				return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.max: %v", err)
+			}
+			if numArg.Value.(float64) > maxVal {
+				maxVal = numArg.Value.(float64)
+			}
+		}
+		return NewNumber(maxVal)
+	})
+	if err != nil {
+		panic(err)
+	}
+	mathExpFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for math.exp, got %d", len(args))
+		}
+		numArg, err := ToNumber(args[0])
+		if err != nil {
+			return nil, fmt.Errorf("RuntimeError: error converting argument to number for math.exp: %v", err)
+		}
+		expVal := math.Exp(numArg.Value.(float64))
+		return NewNumber(expVal)
+	})
+	if err != nil {
+		panic(err)
+	}
 	mathModule, err := NewSubRuntime(
 		NewRuntime(
 			map[string]Obj{
@@ -913,6 +1035,14 @@ func InitBuiltinModules() {  // Type: subruntime
 				"ln@0": mathLnFunc,
 				"log10@0": mathLog10Func,
 				"log2@0": mathLog2Func,
+				"floor@0": mathFloorFunc,
+				"ceil@0": mathCeilFunc,
+				"round@0": mathRoundFunc,
+				"trunc@0": mathTruncFunc,
+				"abs@0": mathAbsFunc,
+				"min@0": mathMinFunc,
+				"max@0": mathMaxFunc,
+				"exp@0": mathExpFunc,
 			},
 			[]map[string]any{},
 		),
@@ -921,11 +1051,367 @@ func InitBuiltinModules() {  // Type: subruntime
 		panic(err)
 	}
 
-	BUILTIN_MODULES["builtins"] = builtinsModule
-	BUILTIN_MODULES["unicode"]  = unicodeModule
-	BUILTIN_MODULES["fileio"]   = fileIoModule
-	BUILTIN_MODULES["memory"]   = memoryModule
-	BUILTIN_MODULES["format"]   = formatModule
-	BUILTIN_MODULES["stdio"]    = stdIoModule
-	BUILTIN_MODULES["math"]     = mathModule
+	// makeclass module
+	makeClassMagicMagics := map[string]ObjMagic{
+		"call": func(self Obj, args []Obj) (Obj, error) {
+			magic, ok := self.Value.(ObjMagic)
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for call magic, expected ObjMagic, got %T", self.Value)
+			}
+			return magic(self, args)
+		},
+		"repr": func(self Obj, args []Obj) (Obj, error) {
+			magic, ok := self.Value.(ObjMagic)
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for repr magic, expected ObjMagic, got %T", self.Value)
+			}
+			return NewString(fmt.Sprintf("<magic object with call behavior %p>", magic))
+		},
+	}
+
+	makeClassMagicsMagics := map[string]ObjMagic{
+		"set_item": func(self Obj, args []Obj) (Obj, error) {
+			if len(args) != 2 {
+				return nil, fmt.Errorf("RuntimeError: expected 2 arguments for set_item, got %d", len(args))
+			}
+			key := args[0]
+			newValue := args[1]
+			magics, ok := self.Value.(map[string]ObjMagic)
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for set_item magic, expected map[string]ObjMagic, got %T", self.Value)
+			}
+			if newValue.Type != "magic" {
+				return nil, fmt.Errorf("TypeError: expected magic object for new value in set_item magic, got %s", newValue.Type)
+			}
+			newMagic, ok := newValue.Value.(ObjMagic)
+			if !ok {
+				return nil, fmt.Errorf("TypeError: expected magic object for new value in set_item magic, got %T", newValue.Value)
+			}
+			magics[key.Value.(string)] = newMagic
+			return nil, nil
+		},
+		"get_item": func(self Obj, args []Obj) (Obj, error) {
+			if len(args) != 1 {
+				return nil, fmt.Errorf("RuntimeError: expected 1 argument for get_item, got %d", len(args))
+			}
+			key := args[0]
+			if key.Type != "string" {
+				return nil, fmt.Errorf("TypeError: expected string argument for key in get_item magic, got %s", key.Type)
+			}
+			magics, ok := self.Value.(map[string]ObjMagic)
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for get_item magic, expected map[string]ObjMagic, got %T", self.Value)
+			}
+			magic, ok := magics[key.Value.(string)]
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: no magic found for key in get_item magic: %s", key.Value.(string))
+			}
+			magicObj := &MeowppObject{
+				Type: "magic",
+				Value: magic,
+				Magic: makeClassMagicMagics,
+			}
+			return magicObj, nil
+		},
+		"repr": func(self Obj, args []Obj) (Obj, error) {
+			magics, ok := self.Value.(map[string]ObjMagic)
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for repr magic, expected map[string]ObjMagic, got %T", self.Value)
+			}
+			return NewString(fmt.Sprintf("<magics object with %d magics>", len(magics)))
+		},
+	}
+
+	makeClassInfoMagics := map[string]ObjMagic{
+		"get_item": func(self Obj, args []Obj) (Obj, error) {
+			if len(args) != 1 {
+				return nil, fmt.Errorf("RuntimeError: expected 1 argument for get_item, got %d", len(args))
+			}
+			key := args[0]
+			values, ok := self.Value.(map[string]Obj)
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for get_item magic, expected map[string]Obj, got %T", self.Value)
+			}
+			value, ok := values["value"]
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for get_item magic, expected Obj, got %T", self.Value)
+			}
+			switch key.Type {
+			case "type":
+				return NewString(value.Type)
+			case "value":
+				return value, nil
+			case "magic":
+				magicsObj := &MeowppObject{
+					Type: "magics",
+					Value: value.Magic,
+					Magic: makeClassMagicsMagics,
+				}
+				return magicsObj, nil
+			case "update":
+				updateFunc := func(self Obj, args []Obj) (Obj, error) {
+					if len(args) != 0 {
+						return nil, fmt.Errorf("RuntimeError: expected 0 argument for update magic, got %d", len(args))
+					}
+					magics, ok := values["magic"].Value.(map[string]ObjMagic)
+					if !ok {
+						return nil, fmt.Errorf("RuntimeError: invalid magic object for update magic, expected map[string]ObjMagic, got %T", values["magic"].Value)
+					}
+					value.Magic = magics
+					return nil, nil
+				}
+				return NewFunction(updateFunc)
+			default:
+				return nil, fmt.Errorf("RuntimeError: unsupported key for get_item: %s", key.Type)
+			}
+		},
+		"set_item": func(self Obj, args []Obj) (Obj, error) {
+			if len(args) != 2 {
+				return nil, fmt.Errorf("RuntimeError: expected 2 arguments for set_item, got %d", len(args))
+			}
+			key := args[0]
+			newValue := args[1]
+			values, ok := self.Value.(map[string]Obj)
+			value, ok := values["value"]
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for set_item magic, expected Obj, got %T", self.Value)
+			}
+			switch key.Type {
+			case "type":
+				value.Type = newValue.Value.(string)
+				return nil, nil
+			case "value":
+				value.Value = newValue.Value
+				return nil, nil
+			case "magic":
+				if newValue.Type != "magics" {
+					return nil, fmt.Errorf("TypeError: expected magic object for magic key in set_item magic, got %s", newValue.Type)
+				}
+				values["magic"] = newValue
+				magics, ok := newValue.Value.(map[string]ObjMagic)
+				if !ok {
+					return nil, fmt.Errorf("TypeError: expected magic object for magic key in set_item magic, got %T", newValue.Value)
+				}
+				value.Magic = magics
+				return nil, nil
+			default:
+				return nil, fmt.Errorf("RuntimeError: unsupported key for set_item: %s", key.Type)
+			}
+		},
+		"repr": func(self Obj, args []Obj) (Obj, error) {
+			value, ok := self.Value.(Obj)
+			if !ok {
+				return nil, fmt.Errorf("RuntimeError: invalid self object for repr magic, expected Obj, got %T", self.Value)
+			}
+			representedValue, err := Repr(value)
+			if err != nil {
+				return nil, fmt.Errorf("RuntimeError: error in repr magic: %v", err)
+			}
+			return NewString(fmt.Sprintf("<info object with type '%s' and value %v>", value.Type, representedValue))
+		},
+	}
+
+	makeClassGetInfoFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for makeclass.get_info, got %d", len(args))
+		}
+		obj := args[0]
+		if err != nil {
+			return nil, fmt.Errorf("RuntimeError: error creating string for object type: %v", err)
+		}
+		infoObj := &MeowppObject{
+			Type: "info",
+			Value: map[string]Obj{
+				"value": obj,
+				"magic": &MeowppObject{
+					Type: "magics",
+					Value: obj.Magic,
+					Magic: makeClassMagicsMagics,
+				},
+			},
+			Magic: makeClassInfoMagics,
+		}
+		return infoObj, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	makeClassMagicFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for makeclass.magic, got %d", len(args))
+		}
+		callMagicObj := args[0]
+		if callMagicObj.Type != "function" {
+			return nil, fmt.Errorf("TypeError: expected function argument for makeclass.magic call magic, got %s", callMagicObj.Type)
+		}
+		callMagicFunc, ok := callMagicObj.Value.(func([]Obj) (Obj, error))
+		if !ok {
+			return nil, fmt.Errorf("TypeError: expected function argument for makeclass.magic call magic, got %T", callMagicObj.Value)
+		}
+		newCallFunc := func(self Obj, args []Obj) (Obj, error) {
+			allArgs := append([]Obj{self}, args...)
+			return callMagicFunc(allArgs)
+		}
+		magicObj := &MeowppObject{
+			Type: "magic",
+			Value: newCallFunc,
+			Magic: makeClassMagicMagics,
+		}
+		return magicObj, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	makeClassModule, err := NewSubRuntime(
+		NewRuntime(
+			map[string]Obj{
+				"get_info@0": makeClassGetInfoFunc,
+				"Magic@0": makeClassMagicFunc,
+			},
+			[]map[string]any{},
+		),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// array module
+	arrayAppendFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) < 2 {
+			return nil, fmt.Errorf("RuntimeError: expected 2 arguments for array.append, got %d", len(args))
+		}
+		arrayObj := args[0]
+		elements := args[1:]
+		if arrayObj.Type != "array" {
+			return nil, fmt.Errorf("TypeError: expected array argument for array.append, got %s", arrayObj.Type)
+		}
+		array, ok := arrayObj.Value.([]Obj)
+		if !ok {
+			return nil, fmt.Errorf("RuntimeError: invalid array object for array.append, expected []Obj, got %T", arrayObj.Value)
+		}
+		newArray := append(array, elements...)
+		arrayObj.Value = newArray
+		return nil, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	arrayPopFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) != 1 {
+			return nil, fmt.Errorf("RuntimeError: expected 1 argument for array.pop, got %d", len(args))
+		}
+		arrayObj := args[0]
+		if arrayObj.Type != "array" {
+			return nil, fmt.Errorf("TypeError: expected array argument for array.pop, got %s", arrayObj.Type)
+		}
+		array, ok := arrayObj.Value.([]Obj)
+		if !ok {
+			return nil, fmt.Errorf("RuntimeError: invalid array object for array.pop, expected []Obj, got %T", arrayObj.Value)
+		}
+		if len(array) == 0 {
+			return nil, fmt.Errorf("RuntimeError: cannot pop from empty array")
+		}
+		lastElement := array[len(array)-1]
+		newArray := array[:len(array)-1]
+		arrayObj.Value = newArray
+		return lastElement, nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	arraySliceFunc, err := NewFunction(func(args []Obj) (Obj, error) {
+		if len(args) < 3 || len(args) > 4 {
+			return nil, fmt.Errorf("RuntimeError: expected 2-4 arguments for array.slice, got %d", len(args))
+		}
+		arrayObj := args[0]
+		if arrayObj.Type != "array" {
+			return nil, fmt.Errorf("TypeError: expected array argument for array.slice, got %s", arrayObj.Type)
+		}
+		array, ok := arrayObj.Value.([]Obj)
+		if !ok {
+			return nil, fmt.Errorf("RuntimeError: invalid array object for array.slice, expected []Obj, got %T", arrayObj.Value)
+		}
+		startIndex := 0
+		endIndex := len(array)
+		step := 1
+		if len(args) >= 3 {
+			if args[1] == nil {
+				startIndex = 0
+			} else {
+				startNum, err := ToNumber(args[1])
+				if err != nil {
+					return nil, fmt.Errorf("RuntimeError: error converting start index to number for array.slice: %v", err)
+				}
+				startIndex = int(startNum.Value.(float64))
+			}
+			for startIndex < 0 {
+				startIndex += len(array)
+			}
+			for startIndex >= len(array) {
+				startIndex -= len(array)
+			}
+			if args[2] == nil {
+				endIndex = len(array)
+			} else {
+				endNum, err := ToNumber(args[2])
+				if err != nil {
+					return nil, fmt.Errorf("RuntimeError: error converting end index to number for array.slice: %v", err)
+				}
+				endIndex = int(endNum.Value.(float64))
+			}
+			for endIndex < 0 {
+				endIndex += len(array)
+			}
+			for endIndex >= len(array) {
+				endIndex -= len(array)
+			}
+		}
+		if len(args) == 4 {
+			stepNum, err := ToNumber(args[3])
+			if err != nil {
+				return nil, fmt.Errorf("RuntimeError: error converting step to number for array.slice: %v", err)
+			}
+			step = int(stepNum.Value.(float64))
+			if step == 0 {
+				return nil, fmt.Errorf("RuntimeError: step cannot be zero in array.slice")
+			}
+			if step < 0 && startIndex < endIndex {
+				return nil, fmt.Errorf("RuntimeError: step cannot be negative when start index is less than end index in array.slice")
+			}
+			if step > 0 && startIndex > endIndex {
+				return nil, fmt.Errorf("RuntimeError: step cannot be positive when start index is greater than end index in array.slice")
+			}
+		}
+		slicedArray := []Obj{}
+		for i := startIndex; (step > 0 && i < endIndex) || (step < 0 && i > endIndex); i += step {
+			slicedArray = append(slicedArray, array[i])
+		}
+		return NewArray(slicedArray)
+	})
+	arrayModule, err := NewSubRuntime(
+		NewRuntime(
+			map[string]Obj{
+				"append@0": arrayAppendFunc,
+				"pop@0": arrayPopFunc,
+				"slice@0": arraySliceFunc,
+			},
+			[]map[string]any{},
+		),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// register built-in modules
+	BUILTIN_MODULES["builtins"]  = builtinsModule
+	BUILTIN_MODULES["unicode"]   = unicodeModule
+	BUILTIN_MODULES["fileio"]    = fileIoModule
+	BUILTIN_MODULES["memory"]    = memoryModule
+	BUILTIN_MODULES["format"]    = formatModule
+	BUILTIN_MODULES["stdio"]     = stdIoModule
+	BUILTIN_MODULES["math"]      = mathModule
+	BUILTIN_MODULES["makeclass"] = makeClassModule
+	BUILTIN_MODULES["array"]     = arrayModule
 }

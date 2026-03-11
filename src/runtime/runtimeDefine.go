@@ -717,6 +717,16 @@ func (rt *Runtime) GotoEntryPoint() {
 		if cmdType, ok := cmd["cmd"].(string); ok && cmdType == "entry_point" {
 			entryPoint = i
 			break
+		} else {
+			switch cmdType {
+			case "label":
+				labelName, ok := cmd["name"].(string)
+				if ok {
+					rt.Labels[labelName] = i
+				}
+			default:
+				continue
+			}
 		}
 	}
 	rt.CmdIndex = entryPoint

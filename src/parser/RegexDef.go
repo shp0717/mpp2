@@ -54,8 +54,11 @@ var (  // Define statements and base regex patterns for the language
 	// Matches a block comment, starting with '/*' and ending with '*/', allowing for any characters in between, including newlines.
 	BlockCommentRegex = Regex{ Pattern: `(/\*[\s\S]*?\*/)` }
 
-	// Matches an in-line value, which can be part of a larger expression
-	FullNameRegex = Regex{ Pattern: `([a-zA-Z0-9_.()\[\]{}"]+)` }
+	// Matches an settable name, capturing the full name which can include letters, digits, underscores, dots, and square brackets (for indexing), but must not start with a digit.
+	SettableRegex = Regex{ Pattern: `([a-zA-Z0-9_.\[\]]+)` }
+
+	// Matches a list of settable names separated by commas, capturing the full list. Each settable name can include letters, digits, underscores, dots, and square brackets (for indexing), but must not start with a digit. The list can have optional whitespace around the commas.
+	SettablesRegex = Regex{ Pattern: `([a-zA-Z0-9_.\[\]]+(?:\s*,\s*[a-zA-Z0-9_.\[\]]+)*)` }
 
 	// Matches an operation value, which can be part of a larger expression
 	InLineValueRegex = Regex{ Pattern: `([a-zA-Z0-9_.()\[\]{}"+\-*/%<>=!&|^?: ]+)` }
@@ -67,7 +70,7 @@ var (  // Define statements and base regex patterns for the language
 	Base16ValueRegex = Regex{ Pattern: `([a-fA-F0-9]*)` }
 
 	// Matches a function call, capturing the function name and its arguments (Base-16 encoded)
-	FunctionCallRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*\(%s\)$`, FullNameRegex.Pattern, Base16ValueRegex.Pattern) }
+	FunctionCallRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*\(%s\)$`, SettableRegex.Pattern, Base16ValueRegex.Pattern) }
 
 	// Matches a validate name
 	ValidNameRegex = Regex{ Pattern: `([a-zA-Z_][a-zA-Z0-9_]*)` }
@@ -95,7 +98,7 @@ var (  // Define statements and base regex patterns for the language
 	DoWhileLoopRegex = Regex{ Pattern: fmt.Sprintf(`^do\s*\{%s\}\s*while\s*\(%s\)$`, Base16ValueRegex.Pattern, InLineValueRegex.Pattern) }
 
 	// Matches a function definition, capturing the function name, parameters (Base-16 encoded), and body (Base-16 encoded)
-	FuncDefRegex = Regex{ Pattern: fmt.Sprintf(`^func\s+%s\s*\(%s\)\s*\{%s\}$`, FullNameRegex.Pattern, Base16ValueRegex.Pattern, Base16ValueRegex.Pattern) }
+	FuncDefRegex = Regex{ Pattern: fmt.Sprintf(`^func\s+%s\s*\(%s\)\s*\{%s\}$`, SettableRegex.Pattern, Base16ValueRegex.Pattern, Base16ValueRegex.Pattern) }
 
 	// Matches an anonymous function definition, capturing the parameters (Base-16 encoded) and body (Base-16 encoded)
 	AnonyFuncDefRegex = Regex{ Pattern: fmt.Sprintf(`^func\s*\(%s\)\s*\{%s\}$`, Base16ValueRegex.Pattern, Base16ValueRegex.Pattern) }
@@ -104,16 +107,16 @@ var (  // Define statements and base regex patterns for the language
 	ReturnStatementRegex = Regex{ Pattern: fmt.Sprintf(`^return\b%s$`, InLineValueRegex.Pattern) }
 
 	// Matches a set statement, capturing the settable name and the value
-	SetStatementRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*=\s*%s$`, FullNameRegex.Pattern, InLineValueRegex.Pattern) }
+	SetStatementRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*=\s*%s$`, SettableRegex.Pattern, InLineValueRegex.Pattern) }
 
 	// Matches a delete statement, capturing the deletable name
-	DeleteStatementRegex = Regex{ Pattern: fmt.Sprintf(`^delete\s+%s$`, FullNameRegex.Pattern) }
+	DeleteStatementRegex = Regex{ Pattern: fmt.Sprintf(`^delete\s+%s$`, SettableRegex.Pattern) }
 
 	// Matches a get statement, capturing the gettable name and the key / index (Base-16 encoded)
-	GetItemRegex = Regex{ Pattern: fmt.Sprintf(`^%s\[%s\]$`, FullNameRegex.Pattern, Base16ValueRegex.Pattern) }
+	GetItemRegex = Regex{ Pattern: fmt.Sprintf(`^%s\[%s\]$`, SettableRegex.Pattern, Base16ValueRegex.Pattern) }
 
 	// Matches a get statement, capturing the gettable name and the attribute (Base-16 encoded)
-	GetAttrRegex = Regex{ Pattern: fmt.Sprintf(`^%s\.%s$`, FullNameRegex.Pattern, ValidNameRegex.Pattern) }
+	GetAttrRegex = Regex{ Pattern: fmt.Sprintf(`^%s\.%s$`, SettableRegex.Pattern, ValidNameRegex.Pattern) }
 
 	// Matches a break statement
 	BreakStatementRegex = Regex{ Pattern: `^break$` }
@@ -132,6 +135,12 @@ var (  // Define statements and base regex patterns for the language
 
 	// Matches the entry point of the program, which is a line that starts with '!Meow++'
 	EntryPointRegex = Regex{ Pattern: `^!Meow\+\+$` }
+
+	// Matches a global variable declaration, capturing the variable name
+	GlobalRegex = Regex{ Pattern: fmt.Sprintf(`^global\s+%s$`, SettableRegex.Pattern) }
+
+	// Matches a nonlocal variable declaration, capturing the variable name
+	NonlocalRegex = Regex{ Pattern: fmt.Sprintf(`^nonlocal\s+%s$`, SettableRegex.Pattern) }
 )
 
 var (  // Define operation regex patterns for the language
@@ -139,10 +148,10 @@ var (  // Define operation regex patterns for the language
 	UnaryRegex = Regex{ Pattern: fmt.Sprintf(`^(\+|-|!)\s*%s$`, InLineValueRegex.Pattern) }
 
 	// Matches a prefix increment or decrement operation, capturing the operator and the operand
-	ExprFirstRegex = Regex{ Pattern: fmt.Sprintf(`^(\+\+|--)\s*%s$`, FullNameRegex.Pattern)}
+	ExprFirstRegex = Regex{ Pattern: fmt.Sprintf(`^(\+\+|--)\s*%s$`, SettableRegex.Pattern)}
 
 	// Matches a postfix increment or decrement operation, capturing the operator and the operand
-	ExprLastRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*(\+\+|--)$`, FullNameRegex.Pattern) }
+	ExprLastRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*(\+\+|--)$`, SettableRegex.Pattern) }
 
 	// Matches an addition or subtraction operation, capturing the left and right operands, and the operator
 	AddSubRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*(\+|-)\s*%s$`, InLineValueRegex.Pattern, InLineValueRegex.Pattern) }
@@ -169,7 +178,7 @@ var (  // Define operation regex patterns for the language
 	ComparisonRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*(<=|>=|<|>)\s*%s$`, InLineValueRegex.Pattern, InLineValueRegex.Pattern) }
 
 	// Matches an operation like +=, -=, *=, /=, %=, ^=, &&=, ||=, ^^=, capturing the left and right operands, operators
-	OperatorSetRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*(\+|-|\*|/|%%|\^|&&|\|\||\^\^)=\s*%s$`, FullNameRegex.Pattern, InLineValueRegex.Pattern) }
+	OperatorSetRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*(\+|-|\*|/|%%|\^|&&|\|\||\^\^)=\s*%s$`, SettableRegex.Pattern, InLineValueRegex.Pattern) }
 
 	// Matches a ternary conditional operation, capturing the condition, true expression, and false expression
 	TernaryRegex = Regex{ Pattern: fmt.Sprintf(`^%s\s*\?\s*%s\s*:\s*%s$`, InLineLazyValueRegex.Pattern, InLineValueRegex.Pattern, InLineValueRegex.Pattern) }
