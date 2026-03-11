@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	VERSION    = "2.0.0 Alpha"
+	VERSION    = "2.0.0 Beta"
 	GOVER      = func () string {
 		info, ok := debug.ReadBuildInfo()
 		if !ok {
