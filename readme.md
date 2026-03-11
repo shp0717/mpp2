@@ -207,6 +207,8 @@ Behavior is implemented through per-type magic methods, so operators, conversion
 
 Built-in modules are imported with the same syntax as file modules, for example `import "math"`.
 
+Some built-in modules also mutate the objects you pass in. For example, `array.append` and `array.pop` update the original array object.
+
 | Module | Available members in the current implementation |
 | --- | --- |
 | `builtins` | Exports the built-in variables and functions as a module namespace. |
@@ -215,7 +217,9 @@ Built-in modules are imported with the same syntax as file modules, for example 
 | `memory` | `raw`, `size`, `usage` |
 | `format` | `sprintf`, `sscanf` |
 | `stdio` | `print`, `println`, `input` |
-| `math` | `random.random`, `random.uniform`, `random.int`, `random.gauss`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `pi`, `e`, `sqrt`, `log`, `ln`, `log10`, `log2` |
+| `math` | `random.random`, `random.uniform`, `random.int`, `random.gauss`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `pi`, `e`, `sqrt`, `log`, `ln`, `log10`, `log2`, `floor`, `ceil`, `round`, `trunc`, `abs`, `min`, `max`, `exp` |
+| `makeclass` | `get_info`, `Magic` for runtime object introspection and custom magic construction |
+| `array` | `append`, `pop`, `slice` for array mutation and slicing |
 
 ## AST Workflow
 

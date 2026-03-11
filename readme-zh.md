@@ -207,6 +207,8 @@ while (true) {
 
 內建模組使用與檔案模組相同的匯入語法，例如 `import "math"`。
 
+有些內建模組會直接修改你傳入的物件。例如 `array.append` 與 `array.pop` 會更新原本的陣列物件。
+
 | 模組 | 目前實作中可用的成員 |
 | --- | --- |
 | `builtins` | 將所有內建變數與函式作為模組命名空間匯出。 |
@@ -215,7 +217,9 @@ while (true) {
 | `memory` | `raw`、`size`、`usage` |
 | `format` | `sprintf`、`sscanf` |
 | `stdio` | `print`、`println`、`input` |
-| `math` | `random.random`、`random.uniform`、`random.int`、`random.gauss`、`sin`、`cos`、`tan`、`asin`、`acos`、`atan`、`pi`、`e`、`sqrt`、`log`、`ln`、`log10`、`log2` |
+| `math` | `random.random`、`random.uniform`、`random.int`、`random.gauss`、`sin`、`cos`、`tan`、`asin`、`acos`、`atan`、`pi`、`e`、`sqrt`、`log`、`ln`、`log10`、`log2`、`floor`、`ceil`、`round`、`trunc`、`abs`、`min`、`max`、`exp` |
+| `makeclass` | `get_info`、`Magic`，用於執行時物件資訊檢視與自訂 magic 建構 |
+| `array` | `append`、`pop`、`slice`，用於陣列修改與切片 |
 
 ## AST 工作流程
 
